@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
 
 
 @Data
@@ -26,11 +29,18 @@ public class MyFile {
     @Column(columnDefinition = "varchar(255) not null")
     private String fileName;
 
+    //// file name is not unique for all users because two users could have the same file name e.g. ID.pdf
+    @Column(columnDefinition = "varchar(255) not null")
+    private String fileType;
+
 
     ////// no relations yet I will do it manually.
     @Column(columnDefinition = "int not null")
     private Integer fileOwnerId;
 
-    @Column(columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private String createdAt;
+
+    @Column(updatable = false)
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
 }

@@ -8,6 +8,7 @@ import com.example.system.Models.User;
 import com.example.system.Repository.FileRepository;
 import com.example.system.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import com.example.system.Models.MyFile;
@@ -29,6 +30,8 @@ public class FileService {
 
     private final String SERVER_FILES_FOLDER = "C:/Users/isaud/IdeaProjects/System/src/main/resources/user_files/";
 
+    public record FileInfoRecord(MediaType mediaType, byte[] data) {
+    }
 
     public String uploadFile(MultipartFile file, String userToken) throws IOException, FileDoesNotExistException {
 
@@ -37,6 +40,8 @@ public class FileService {
 
         ////// we'll make a directory for each user in our Server and store whatever we need to retrieve x file in the database, this way is way faster than storing the files in the db as BLOB.
         User user = userRepository.findUserByUserToken(userToken);
+        if (user == null) throw new WrongTokenException();
+
         Integer userID = user.getId();
         String fileLocation = SERVER_FILES_FOLDER + userID + "/" + file.getOriginalFilename();
 
@@ -46,13 +51,14 @@ public class FileService {
         file.transferTo(new File(fileLocation));
 
         MyFile uploadFile = new MyFile();
-        uploadFile.setFileName(file.getName());
-        uploadFile.setSize(file.getSize());
+        uploadFile.setFileName(file.getOriginalFilename());
+        uploadFile.setFileType(file.getContentType());
+        uploadFile.setSize(file.getSize() >> 20); //// converting bytes to mbs by bit shifting instead of dividing
         uploadFile.setFileOwnerId(userID);
 
         fileRepository.save(uploadFile);
 
-        return "File named " + file.getName() + " uploaded successfully !";
+        return "File named " + file.getOriginalFilename() + " uploaded successfully !";
     }
 
 
@@ -69,7 +75,7 @@ public class FileService {
         return userFilesList;
     }
 
-    public byte[] downloadFileById(String userToken, Integer fileID) throws IOException,WrongTokenException, FileDoesNotExistException {
+    public FileInfoRecord downloadFileById(String userToken, Integer fileID) throws IOException, WrongTokenException, FileDoesNotExistException {
 
 
         ///// doing this way allows us to prevent any unwanted access to any user's files since this token is generated and given everytime the user login to their account.
@@ -86,11 +92,11 @@ public class FileService {
 
         byte[] file = Files.readAllBytes(new File(downloadFilePath).toPath());
 
-        return file;
+        return new FileInfoRecord(MediaType.valueOf(downloadFile.getFileType()), file);
 
     }
 
-    public byte[] downloadFileByName(String userToken, String fileName) throws IOException, FileDoesNotExistException, WrongTokenException {
+    public FileInfoRecord downloadFileByName(String userToken, String fileName) throws IOException, FileDoesNotExistException, WrongTokenException {
 
 
         ///// doing this way allows us to prevent any unwanted access to any user's files since this token is generated and given everytime the user login to their account.
@@ -106,7 +112,8 @@ public class FileService {
 
         byte[] file = Files.readAllBytes(new File(downloadFilePath).toPath());
 
-        return file;
+
+        return new FileInfoRecord(MediaType.valueOf(downloadFile.getFileType()), file);
 
     }
 

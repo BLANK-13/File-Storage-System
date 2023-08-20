@@ -42,7 +42,7 @@ public class UserController {
     @GetMapping("/log-in/{username}/{password}")
     public ResponseEntity<ApiResponse<String>> loginUser(@PathVariable String username, @PathVariable String password) {
         User user = userService.loginUser(username, password);
-        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("Login successful welcome " + user.getName() + " this is your token to access your files copy it: " + user.getUserToken()));
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("Login successful welcome " + user.getName() + " this is your token to access your files copy it: { " + user.getUserToken() + " }"));
     }
 
 
