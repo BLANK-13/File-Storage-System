@@ -26,7 +26,7 @@ public class UserController {
     @GetMapping("/get")
     public ResponseEntity<ApiResponse<List<User>>> getAllUsers() {
 
-        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(userService.getAll()));
+        return ResponseEntity.ok(new ApiResponse<>(userService.getAll()));
     }
 
 
@@ -34,7 +34,7 @@ public class UserController {
     @GetMapping("/get-id/{id}")
     public ResponseEntity<ApiResponse<User>> getUserById(@PathVariable Integer id) {
 
-        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(userService.getUserById(id)));
+        return ResponseEntity.ok(new ApiResponse<>(userService.getUserById(id)));
     }
 
 
@@ -42,32 +42,32 @@ public class UserController {
     @GetMapping("/log-in/{username}/{password}")
     public ResponseEntity<ApiResponse<String>> loginUser(@PathVariable String username, @PathVariable String password) {
         User user = userService.loginUser(username, password);
-        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("Login successful welcome " + user.getName() + " this is your token to access your files copy it: { " + user.getUserToken() + " }"));
+        return ResponseEntity.ok(new ApiResponse<>("Login successful welcome " + user.getName() + " this is your token to access your files copy it: { " + user.getUserToken() + " }"));
     }
 
     @PostMapping("/add")
     public ResponseEntity<ApiResponse<String>> addUser(@RequestBody @Valid User newUser, Errors errors) {
 
         if (errors.hasErrors()) {
-            return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(errors.getFieldError().getDefaultMessage()));
+            return ResponseEntity.ok(new ApiResponse<>(errors.getFieldError().getDefaultMessage()));
 
         }
 
         userService.addUser(newUser);
-        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(ApiResponse.userAddSuccessMessage()));
+        return ResponseEntity.ok(new ApiResponse<>(ApiResponse.userAddSuccessMessage()));
     }
 
     @PutMapping("/update/{id}")
     public ResponseEntity<ApiResponse<String>> updateUser(@PathVariable Integer id, @RequestBody @Valid User userUpdate, Errors errors) {
 
         if (errors.hasErrors()) {
-            return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(errors.getFieldError().getDefaultMessage()));
+            return ResponseEntity.ok(new ApiResponse<>(errors.getFieldError().getDefaultMessage()));
 
         }
 
 
         userService.updateUser(id, userUpdate);
-        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(ApiResponse.userUpdateSuccessMessage()));
+        return ResponseEntity.ok(new ApiResponse<>(ApiResponse.userUpdateSuccessMessage()));
 
     }
 
@@ -75,13 +75,13 @@ public class UserController {
     public ResponseEntity<ApiResponse<String>> updateUser(@PathVariable Integer id) {
 
         userService.deleteUser(id);
-        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(ApiResponse.userDeleteSuccessMessage()));
+        return ResponseEntity.ok(new ApiResponse<>(ApiResponse.userDeleteSuccessMessage()));
 
     }
 
     @GetMapping("/get-my-info/{userToken}")
     public ResponseEntity<ApiResponse<User>> userInfo(@PathVariable String userToken) {
 
-        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(userService.userInfo(userToken)));
+        return ResponseEntity.ok(new ApiResponse<>(userService.userInfo(userToken)));
     }
 }
