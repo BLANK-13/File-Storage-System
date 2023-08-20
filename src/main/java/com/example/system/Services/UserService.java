@@ -4,6 +4,7 @@ package com.example.system.Services;
 import com.example.system.ApiUtils.UserExceptions.LoginFailedException;
 import com.example.system.ApiUtils.UserExceptions.NoUsersException;
 import com.example.system.ApiUtils.UserExceptions.UserNotFoundException;
+import com.example.system.ApiUtils.WrongTokenException;
 import com.example.system.Models.User;
 import com.example.system.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -81,6 +82,14 @@ public class UserService {
         ///// each login we generate a new token just to add more security.
         user.setUserToken(UUID.randomUUID().toString());
         userRepository.save(user);
+
+        return user;
+    }
+
+    public User userInfo(String userToken) throws LoginFailedException {
+        User user = userRepository.findUserByUserToken(userToken);
+
+        if (user == null) throw new WrongTokenException();
 
         return user;
     }

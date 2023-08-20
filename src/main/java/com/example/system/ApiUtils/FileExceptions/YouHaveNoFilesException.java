@@ -4,6 +4,6 @@ import com.example.system.ApiUtils.ApiException;
 
 public class YouHaveNoFilesException extends ApiException {
     public YouHaveNoFilesException() {
-        super("You have not uploaded files yet, try uploading a file.");
+        super("No files found, try uploading new files.");
     }
 }

@@ -19,6 +19,7 @@ public class FileController {
 
 
     private final FileService fileService;
+    private final int MAX_FILE_SIZE = 100;
 
 
     @GetMapping("/get-my-files/{userToken}")
@@ -27,10 +28,22 @@ public class FileController {
         return ResponseEntity.ok(new ApiResponse<>(fileService.getMyFiles(userToken)));
     }
 
+    @GetMapping("/get-files-by-type/{userToken}/{mediaType}")
+    public ResponseEntity<ApiResponse<?>> getMyFilesByType(@PathVariable String userToken, @PathVariable String mediaType) {
+
+        return ResponseEntity.ok(new ApiResponse<>(fileService.getMyFilesByType(userToken, mediaType)));
+    }
+
     @GetMapping("/get-my-files-above/{userToken}/{size}")
-    public ResponseEntity<ApiResponse<?>> getMyFilesList(@PathVariable String userToken, @PathVariable Long size) {
+    public ResponseEntity<ApiResponse<?>> getMyFilesListBiggerThan(@PathVariable String userToken, @PathVariable Long size) {
 
         return ResponseEntity.ok(new ApiResponse<>(fileService.getMyFilesBiggerThan(userToken, size)));
+    }
+
+    @GetMapping("/get-my-files-less/{userToken}/{size}")
+    public ResponseEntity<ApiResponse<?>> getMyFilesListSmallerThan(@PathVariable String userToken, @PathVariable Long size) {
+
+        return ResponseEntity.ok(new ApiResponse<>(fileService.getMyFilesLessThan(userToken, size)));
     }
 
     @GetMapping("/download-by-id/{userToken}/{fileId}")
@@ -53,5 +66,9 @@ public class FileController {
         return ResponseEntity.ok(new ApiResponse<>(fileService.uploadFile(file, userToken)));
     }
 
+    @GetMapping("/get-allowed")
+    public ResponseEntity<ApiResponse<?>> getMaximumUploadSize() {
 
+        return ResponseEntity.ok(new ApiResponse<>("You can upload up to: " + MAX_FILE_SIZE + "MB"));
+    }
 }

@@ -11,9 +11,14 @@ public interface FileRepository extends JpaRepository<MyFile, Integer> {
 
     List<MyFile> findAllBySizeAfterAndFileOwnerId(Long size, Integer ownerID);
 
+    List<MyFile> findAllBySizeBeforeAndFileOwnerId(Long size, Integer ownerID);
+
+
     MyFile findMyFileByFileNameAndFileOwnerId(String fileName, Integer ownerID);
 
     MyFile findMyFileByIdAndFileOwnerId(Integer fileID, Integer ownerID);
 
+
+    List<MyFile> getAllByFileTypeContainingIgnoreCaseAndFileOwnerId(String mediaType, Integer ownerID);
 
 }

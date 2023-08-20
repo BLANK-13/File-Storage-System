@@ -45,7 +45,6 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("Login successful welcome " + user.getName() + " this is your token to access your files copy it: { " + user.getUserToken() + " }"));
     }
 
-
     @PostMapping("/add")
     public ResponseEntity<ApiResponse<String>> addUser(@RequestBody @Valid User newUser, Errors errors) {
 
@@ -80,4 +79,9 @@ public class UserController {
 
     }
 
+    @GetMapping("/get-my-info/{userToken}")
+    public ResponseEntity<ApiResponse<User>> userInfo(@PathVariable String userToken) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(userService.userInfo(userToken)));
+    }
 }

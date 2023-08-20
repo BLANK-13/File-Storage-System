@@ -75,6 +75,19 @@ public class FileService {
         return userFilesList;
     }
 
+    public List<MyFile> getMyFilesByType(String userToken, String mediaType) throws WrongTokenException, YouHaveNoFilesException {
+
+        ///// doing this way allows us to prevent any unwanted access to any user's files since this token is generated and given everytime the user login to their account.
+        User filesOwner = userRepository.findUserByUserToken(userToken);
+
+        if (filesOwner == null) throw new WrongTokenException();
+
+        List<MyFile> userFilesList = fileRepository.getAllByFileTypeContainingIgnoreCaseAndFileOwnerId(mediaType, filesOwner.getId());
+        if (userFilesList.isEmpty()) throw new YouHaveNoFilesException();
+
+        return userFilesList;
+    }
+
     public FileInfoRecord downloadFileById(String userToken, Integer fileID) throws IOException, WrongTokenException, FileDoesNotExistException {
 
 
@@ -125,6 +138,19 @@ public class FileService {
         if (filesOwner == null) throw new WrongTokenException();
 
         List<MyFile> userFilesList = fileRepository.findAllBySizeAfterAndFileOwnerId(size, filesOwner.getId());
+        if (userFilesList.isEmpty()) throw new YouHaveNoFilesException();
+
+        return userFilesList;
+    }
+
+    public List<MyFile> getMyFilesLessThan(String userToken, Long size) throws WrongTokenException, YouHaveNoFilesException {
+
+        ///// doing this way allows us to prevent any unwanted access to any user's files since this token is generated and given everytime the user login to their account.
+        User filesOwner = userRepository.findUserByUserToken(userToken);
+
+        if (filesOwner == null) throw new WrongTokenException();
+
+        List<MyFile> userFilesList = fileRepository.findAllBySizeBeforeAndFileOwnerId(size, filesOwner.getId());
         if (userFilesList.isEmpty()) throw new YouHaveNoFilesException();
 
         return userFilesList;
