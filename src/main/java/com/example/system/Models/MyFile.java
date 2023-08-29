@@ -1,15 +1,15 @@
 package com.example.system.Models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
 
-@Data
+@Setter
+@Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
@@ -22,25 +22,25 @@ public class MyFile {
 
 
     @Column(columnDefinition = "int not null")
-    private Long size;
+    private Integer size;
 
 
     //// file name is not unique for all users because two users could have the same file name e.g. ID.pdf
     @Column(columnDefinition = "varchar(255) not null")
     private String fileName;
 
-    //// file name is not unique for all users because two users could have the same file name e.g. ID.pdf
     @Column(columnDefinition = "varchar(255) not null")
     private String fileType;
-
-
-    ////// no relations yet I will do it manually.
-    @Column(columnDefinition = "int not null")
-    private Integer fileOwnerId;
 
 
     @Column(updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JsonIgnore
+    private User user;
 
 }

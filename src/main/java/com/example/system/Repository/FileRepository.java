@@ -1,24 +1,27 @@
 package com.example.system.Repository;
 
 import com.example.system.Models.MyFile;
+import com.example.system.Models.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+
+@Repository
 public interface FileRepository extends JpaRepository<MyFile, Integer> {
 
-    List<MyFile> findAllByFileOwnerId(Integer id);
+    List<MyFile> findAllByUser(User user);
 
-    List<MyFile> findAllBySizeAfterAndFileOwnerId(Long size, Integer ownerID);
+    List<MyFile> findAllBySizeAfterAndUser(Integer size, User user);
 
-    List<MyFile> findAllBySizeBeforeAndFileOwnerId(Long size, Integer ownerID);
-
-
-    MyFile findMyFileByFileNameAndFileOwnerId(String fileName, Integer ownerID);
-
-    MyFile findMyFileByIdAndFileOwnerId(Integer fileID, Integer ownerID);
+    List<MyFile> findAllBySizeBeforeAndUser(Integer size, User user);
 
 
-    List<MyFile> getAllByFileTypeContainingIgnoreCaseAndFileOwnerId(String mediaType, Integer ownerID);
+    MyFile findMyFileByFileNameAndUser(String filename, User user);
+
+    MyFile findMyFileByIdAndUser(Integer fileId, User user);
+
+    List<MyFile> getAllByFileTypeContainingIgnoreCaseAndUser(String mediaType, User user);
 
 }

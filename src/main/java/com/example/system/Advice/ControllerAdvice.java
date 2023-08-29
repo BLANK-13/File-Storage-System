@@ -29,6 +29,13 @@ public class ControllerAdvice {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(e.getMessage()));
     }
 
+    @ExceptionHandler(NullPointerException.class)
+    public ResponseEntity<ApiResponse<String>> NullPointerException(NullPointerException e) {
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(e.getMessage()));
+    }
+
+
 
     @ExceptionHandler(IOException.class)
     public ResponseEntity<ApiResponse<String>> IOException(IOException e) {

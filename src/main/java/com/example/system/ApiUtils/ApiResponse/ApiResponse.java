@@ -14,11 +14,11 @@ public class ApiResponse<T> {
     }
 
     public static String userUpdateSuccessMessage() {
-        return "User updated successfully";
+        return "User info updated successfully";
     }
 
     public static String userDeleteSuccessMessage() {
-        return "User deleted successfully";
+        return "User info deleted successfully";
     }
 }
 

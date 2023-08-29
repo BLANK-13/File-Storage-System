@@ -7,9 +7,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 
@@ -22,66 +24,32 @@ public class UserController {
     private final UserService userService;
 
 
-    //////// just for testing this endpoint shows all user tokens which is bad. it shouldn't exist.
+    ////// Only for ADMIN authorization if there's any in the future.
     @GetMapping("/get")
     public ResponseEntity<ApiResponse<List<User>>> getAllUsers() {
 
         return ResponseEntity.ok(new ApiResponse<>(userService.getAll()));
     }
 
+    @PutMapping("/update")
+    public ResponseEntity<ApiResponse<String>> updateUser(@AuthenticationPrincipal User user, @RequestBody @Valid User userUpdate) {
 
-    //////// just for testing this endpoint shows user token which is bad. it shouldn't exist.
-    @GetMapping("/get-id/{id}")
-    public ResponseEntity<ApiResponse<User>> getUserById(@PathVariable Integer id) {
-
-        return ResponseEntity.ok(new ApiResponse<>(userService.getUserById(id)));
-    }
-
-
-    ///// this is where the user logs in and gets their token to get access to their files anywhere.
-    @GetMapping("/log-in/{username}/{password}")
-    public ResponseEntity<ApiResponse<String>> loginUser(@PathVariable String username, @PathVariable String password) {
-        User user = userService.loginUser(username, password);
-        return ResponseEntity.ok(new ApiResponse<>("Login successful welcome " + user.getName() + " this is your token to access your files copy it: { " + user.getUserToken() + " }"));
-    }
-
-    @PostMapping("/add")
-    public ResponseEntity<ApiResponse<String>> addUser(@RequestBody @Valid User newUser, Errors errors) {
-
-        if (errors.hasErrors()) {
-            return ResponseEntity.ok(new ApiResponse<>(errors.getFieldError().getDefaultMessage()));
-
-        }
-
-        userService.addUser(newUser);
-        return ResponseEntity.ok(new ApiResponse<>(ApiResponse.userAddSuccessMessage()));
-    }
-
-    @PutMapping("/update/{id}")
-    public ResponseEntity<ApiResponse<String>> updateUser(@PathVariable Integer id, @RequestBody @Valid User userUpdate, Errors errors) {
-
-        if (errors.hasErrors()) {
-            return ResponseEntity.ok(new ApiResponse<>(errors.getFieldError().getDefaultMessage()));
-
-        }
-
-
-        userService.updateUser(id, userUpdate);
+        userService.updateUser(user.getId(), userUpdate);
         return ResponseEntity.ok(new ApiResponse<>(ApiResponse.userUpdateSuccessMessage()));
 
     }
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ApiResponse<String>> updateUser(@PathVariable Integer id) {
+    @DeleteMapping("/delete")
+    public ResponseEntity<ApiResponse<String>> updateUser(@AuthenticationPrincipal User user) throws IOException {
 
-        userService.deleteUser(id);
+        userService.deleteUser(user.getId());
         return ResponseEntity.ok(new ApiResponse<>(ApiResponse.userDeleteSuccessMessage()));
 
     }
 
-    @GetMapping("/get-my-info/{userToken}")
-    public ResponseEntity<ApiResponse<User>> userInfo(@PathVariable String userToken) {
+    @GetMapping("/get-my-info")
+    public ResponseEntity<ApiResponse<User>> userInfo(@AuthenticationPrincipal User user) {
 
-        return ResponseEntity.ok(new ApiResponse<>(userService.userInfo(userToken)));
+        return ResponseEntity.ok(new ApiResponse<>(userService.userInfo(user.getId())));
     }
 }

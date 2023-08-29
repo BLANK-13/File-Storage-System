@@ -6,8 +6,9 @@ import com.example.system.ApiUtils.FileExceptions.YouHaveNoFilesException;
 import com.example.system.ApiUtils.WrongTokenException;
 import com.example.system.Models.User;
 import com.example.system.Repository.FileRepository;
-import com.example.system.Repository.UserRepository;
+import com.example.system.Repository.AuthRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,41 +21,41 @@ import java.nio.file.Paths;
 import java.util.List;
 
 @Service
-
 @RequiredArgsConstructor
 public class FileService {
 
 
     private final FileRepository fileRepository;
-    private final UserRepository userRepository;
+    private final AuthRepository userRepository;
 
     private final String SERVER_FILES_FOLDER = "C:/Users/isaud/IdeaProjects/System/src/main/resources/user_files/";
 
+    //// record to put the file info and the file itself in one place I think it's more readable this way, plus we can return both from a function.
     public record FileInfoRecord(MediaType mediaType, byte[] data) {
     }
 
-    public String uploadFile(MultipartFile file, String userToken) throws IOException, FileDoesNotExistException {
+    public String uploadFile(MultipartFile file, Integer userId) throws IOException, FileDoesNotExistException {
 
         if (file.isEmpty()) throw new FileDoesNotExistException();
 
 
         ////// we'll make a directory for each user in our Server and store whatever we need to retrieve x file in the database, this way is way faster than storing the files in the db as BLOB.
-        User user = userRepository.findUserByUserToken(userToken);
-        if (user == null) throw new WrongTokenException();
+        User user = userRepository.findUserById(userId);
 
-        Integer userID = user.getId();
-        String fileLocation = SERVER_FILES_FOLDER + userID + "/" + file.getOriginalFilename();
+        String fileLocation = SERVER_FILES_FOLDER + user.getId() + "/" + file.getOriginalFilename();
 
         Files.createDirectories(Paths.get(fileLocation));
 
 
         file.transferTo(new File(fileLocation));
 
+        int fileSizeInMb = Math.toIntExact((file.getSize() >> 20)); //// converting bytes to mbs by bit shifting instead of dividing
+
         MyFile uploadFile = new MyFile();
         uploadFile.setFileName(file.getOriginalFilename());
         uploadFile.setFileType(file.getContentType());
-        uploadFile.setSize(file.getSize() >> 20); //// converting bytes to mbs by bit shifting instead of dividing
-        uploadFile.setFileOwnerId(userID);
+        uploadFile.setSize(fileSizeInMb > 0 ? fileSizeInMb : 1); //// if file is less than 1mb it'll be 0 after shifting so we'll just put 1mb as an approximation in that case.
+        uploadFile.setUser(user);
 
         fileRepository.save(uploadFile);
 
@@ -62,42 +63,42 @@ public class FileService {
     }
 
 
-    public List<MyFile> getMyFiles(String userToken) throws WrongTokenException, YouHaveNoFilesException {
+    public void deleteUserFiles(Integer userId) throws IOException {
 
-        ///// doing this way allows us to prevent any unwanted access to any user's files since this token is generated and given everytime the user login to their account.
-        User filesOwner = userRepository.findUserByUserToken(userToken);
+        FileUtils.deleteDirectory(new File(SERVER_FILES_FOLDER + userId));
 
-        if (filesOwner == null) throw new WrongTokenException();
+    }
 
-        List<MyFile> userFilesList = fileRepository.findAllByFileOwnerId(filesOwner.getId());
+    public List<MyFile> getMyFiles(Integer userId) throws WrongTokenException, YouHaveNoFilesException {
+
+        User filesOwner = userRepository.findUserById(userId);
+
+        List<MyFile> userFilesList = fileRepository.findAllByUser(filesOwner);
+
         if (userFilesList.isEmpty()) throw new YouHaveNoFilesException();
 
         return userFilesList;
     }
 
-    public List<MyFile> getMyFilesByType(String userToken, String mediaType) throws WrongTokenException, YouHaveNoFilesException {
+    public List<MyFile> getMyFilesByType(Integer userId, String mediaType) throws WrongTokenException, YouHaveNoFilesException {
 
-        ///// doing this way allows us to prevent any unwanted access to any user's files since this token is generated and given everytime the user login to their account.
-        User filesOwner = userRepository.findUserByUserToken(userToken);
+        User filesOwner = userRepository.findUserById(userId);
 
-        if (filesOwner == null) throw new WrongTokenException();
+        List<MyFile> userFilesList = fileRepository.getAllByFileTypeContainingIgnoreCaseAndUser(mediaType, filesOwner);
 
-        List<MyFile> userFilesList = fileRepository.getAllByFileTypeContainingIgnoreCaseAndFileOwnerId(mediaType, filesOwner.getId());
         if (userFilesList.isEmpty()) throw new YouHaveNoFilesException();
 
         return userFilesList;
     }
 
-    public FileInfoRecord downloadFileById(String userToken, Integer fileID) throws IOException, WrongTokenException, FileDoesNotExistException {
+    public FileInfoRecord downloadFileById(Integer userId, Integer fileID) throws IOException, WrongTokenException, FileDoesNotExistException {
 
 
         ///// doing this way allows us to prevent any unwanted access to any user's files since this token is generated and given everytime the user login to their account.
-        User user = userRepository.findUserByUserToken(userToken);
-
-        if (user == null) throw new WrongTokenException();
+        User user = userRepository.findUserById(userId);
 
 
-        MyFile downloadFile = fileRepository.findMyFileByIdAndFileOwnerId(fileID, user.getId());
+        MyFile downloadFile = fileRepository.findMyFileByIdAndUser(fileID, user);
 
         if (downloadFile == null) throw new FileDoesNotExistException();
 
@@ -109,15 +110,12 @@ public class FileService {
 
     }
 
-    public FileInfoRecord downloadFileByName(String userToken, String fileName) throws IOException, FileDoesNotExistException, WrongTokenException {
+    public FileInfoRecord downloadFileByName(Integer userId, String fileName) throws IOException, FileDoesNotExistException, WrongTokenException {
 
 
-        ///// doing this way allows us to prevent any unwanted access to any user's files since this token is generated and given everytime the user login to their account.
-        User user = userRepository.findUserByUserToken(userToken);
+        User user = userRepository.findUserById(userId);
 
-        if (user == null) throw new WrongTokenException();
-
-        MyFile downloadFile = fileRepository.findMyFileByFileNameAndFileOwnerId(fileName, user.getId());
+        MyFile downloadFile = fileRepository.findMyFileByFileNameAndUser(fileName, user);
 
         if (downloadFile == null) throw new FileDoesNotExistException();
 
@@ -130,27 +128,24 @@ public class FileService {
 
     }
 
-    public List<MyFile> getMyFilesBiggerThan(String userToken, Long size) throws WrongTokenException, YouHaveNoFilesException {
+    public List<MyFile> getMyFilesBiggerThan(Integer userId, Integer size) throws WrongTokenException, YouHaveNoFilesException {
 
         ///// doing this way allows us to prevent any unwanted access to any user's files since this token is generated and given everytime the user login to their account.
-        User filesOwner = userRepository.findUserByUserToken(userToken);
+        User filesOwner = userRepository.findUserById(userId);
 
-        if (filesOwner == null) throw new WrongTokenException();
 
-        List<MyFile> userFilesList = fileRepository.findAllBySizeAfterAndFileOwnerId(size, filesOwner.getId());
+        List<MyFile> userFilesList = fileRepository.findAllBySizeAfterAndUser(size, filesOwner);
         if (userFilesList.isEmpty()) throw new YouHaveNoFilesException();
 
         return userFilesList;
     }
 
-    public List<MyFile> getMyFilesLessThan(String userToken, Long size) throws WrongTokenException, YouHaveNoFilesException {
+    public List<MyFile> getMyFilesLessThan(Integer userId, Integer size) throws WrongTokenException, YouHaveNoFilesException {
 
         ///// doing this way allows us to prevent any unwanted access to any user's files since this token is generated and given everytime the user login to their account.
-        User filesOwner = userRepository.findUserByUserToken(userToken);
+        User filesOwner = userRepository.findUserById(userId);
 
-        if (filesOwner == null) throw new WrongTokenException();
-
-        List<MyFile> userFilesList = fileRepository.findAllBySizeBeforeAndFileOwnerId(size, filesOwner.getId());
+        List<MyFile> userFilesList = fileRepository.findAllBySizeBeforeAndUser(size, filesOwner);
         if (userFilesList.isEmpty()) throw new YouHaveNoFilesException();
 
         return userFilesList;

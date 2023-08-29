@@ -1,15 +1,19 @@
 package com.example.system.Services;
 
 
+import com.example.system.ApiUtils.ApiException;
 import com.example.system.ApiUtils.UserExceptions.LoginFailedException;
 import com.example.system.ApiUtils.UserExceptions.NoUsersException;
 import com.example.system.ApiUtils.UserExceptions.UserNotFoundException;
+import com.example.system.ApiUtils.UserExceptions.UsernameAlreadyUsedException;
 import com.example.system.ApiUtils.WrongTokenException;
 import com.example.system.Models.User;
-import com.example.system.Repository.UserRepository;
+import com.example.system.Repository.AuthRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -20,11 +24,12 @@ import java.util.UUID;
 public class UserService {
 
 
-    private final UserRepository userRepository;
+    private final AuthRepository authRepository;
+    private final FileService fileService;
 
 
     public List<User> getAll() throws NoUsersException {
-        List<User> Users = userRepository.findAll();
+        List<User> Users = authRepository.findAll();
 
         if (Users.isEmpty()) {
             throw new NoUsersException();
@@ -33,90 +38,76 @@ public class UserService {
         return Users;
     }
 
-    public void addUser(User user) {
-        user.setPassword(encryptPassword(user.getPassword()));
-        user.setUserToken(UUID.randomUUID().toString());
 
-        userRepository.save(user);
-    }
+    public void updateUser(Integer userId, User userUpdate) throws UsernameAlreadyUsedException {
+        User userInDb = authRepository.findUserById(userId);
+        User usernameCheck = authRepository.findUserByUsername(userUpdate.getUsername());
 
-    public void updateUser(Integer id, User userUpdate) throws UserNotFoundException {
-        User userInDb = userRepository.findUserById(id);
+        /// if it's not null that means there's already a user with the new username.
+        if (usernameCheck != null) {
+            throw new UsernameAlreadyUsedException();
+        }
 
-        if (userInDb == null) throw new UserNotFoundException();
+        String hash = new BCryptPasswordEncoder().encode(userUpdate.getPassword());
 
-
-        userInDb.setEmail(userUpdate.getEmail());
-        userInDb.setName(userUpdate.getName());
         userInDb.setUsername(userUpdate.getUsername());
-        userInDb.setPassword(encryptPassword(userUpdate.getPassword()));
-        userInDb.setUserToken(UUID.randomUUID().toString());
+        userInDb.setPassword(hash);
 
-        userRepository.save(userInDb);
+        authRepository.save(userInDb);
     }
 
 
-    public void deleteUser(Integer id) {
-        User userInDb = userRepository.findUserById(id);
+    public void deleteUser(Integer id) throws IOException {
+        User userInDb = authRepository.findUserById(id);
 
         if (userInDb == null) {
             throw new UserNotFoundException();
         }
-        userRepository.delete(userInDb);
-    }
-
-    public User getUserById(Integer id) throws UserNotFoundException {
-        User userInDb = userRepository.findUserById(id);
-
-        if (userInDb == null) throw new UserNotFoundException();
-
-        return userInDb;
-    }
 
 
-    public User loginUser(String username, String password) throws LoginFailedException {
-        User user = userRepository.findByUsernameAndPassword(username, encryptPassword(password));
-
-        if (user == null) throw new LoginFailedException();
-
-        ///// each login we generate a new token just to add more security.
-        user.setUserToken(UUID.randomUUID().toString());
-        userRepository.save(user);
-
-        return user;
-    }
-
-    public User userInfo(String userToken) throws LoginFailedException {
-        User user = userRepository.findUserByUserToken(userToken);
-
-        if (user == null) throw new WrongTokenException();
-
-        return user;
-    }
+//// We won't actually delete a user from the db since you can't delete someone who's in I need to test it more.
+// I tried utilizing the logout in the filter chain, but it didn't work.
+// For now, I'll delete all user files from the server and keep the user in the db.
 
 
-    private String encryptPassword(String password) {
+//        authRepository.delete(userInDb);
 
-        String encryptedpassword = null;
-        try {
-            MessageDigest m = MessageDigest.getInstance("MD5");
 
-            m.update(password.getBytes());
-
-            byte[] bytes = m.digest();
-
-            StringBuilder s = new StringBuilder();
-            for (byte aByte : bytes) {
-                s.append(Integer.toString((aByte & 0xff) + 0x100, 16).substring(1));
-            }
-
-            encryptedpassword = s.toString();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace(); //// this should never be reached anyway.
+        ///// maybe this user have no files in our server so we check for that just before deleting their directory
+        if (!userInDb.getFiles().isEmpty()) {
+            fileService.deleteUserFiles(userInDb.getId());
         }
-
-        return encryptedpassword;
     }
+
+
+    public User userInfo(Integer userId) throws LoginFailedException {
+
+        return authRepository.findUserById(userId);
+    }
+
+
+//    private String encryptPassword(String password) {
+//
+//        String encryptedpassword = null;
+//        try {
+//            MessageDigest m = MessageDigest.getInstance("MD5");
+//
+//            m.update(password.getBytes());
+//
+//            byte[] bytes = m.digest();
+//
+//            StringBuilder s = new StringBuilder();
+//            for (byte aByte : bytes) {
+//                s.append(Integer.toString((aByte & 0xff) + 0x100, 16).substring(1));
+//            }
+//
+//            encryptedpassword = s.toString();
+//        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace(); //// this should never be reached anyway.
+//        }
+//
+//        return encryptedpassword;
+//    }
 
 
 }
