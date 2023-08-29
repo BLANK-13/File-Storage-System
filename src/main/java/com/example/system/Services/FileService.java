@@ -3,7 +3,6 @@ package com.example.system.Services;
 
 import com.example.system.ApiUtils.FileExceptions.FileDoesNotExistException;
 import com.example.system.ApiUtils.FileExceptions.YouHaveNoFilesException;
-import com.example.system.ApiUtils.WrongTokenException;
 import com.example.system.Models.User;
 import com.example.system.Repository.FileRepository;
 import com.example.system.Repository.AuthRepository;
@@ -69,7 +68,7 @@ public class FileService {
 
     }
 
-    public List<MyFile> getMyFiles(Integer userId) throws WrongTokenException, YouHaveNoFilesException {
+    public List<MyFile> getMyFiles(Integer userId) throws YouHaveNoFilesException {
 
         User filesOwner = userRepository.findUserById(userId);
 
@@ -80,7 +79,7 @@ public class FileService {
         return userFilesList;
     }
 
-    public List<MyFile> getMyFilesByType(Integer userId, String mediaType) throws WrongTokenException, YouHaveNoFilesException {
+    public List<MyFile> getMyFilesByType(Integer userId, String mediaType) throws YouHaveNoFilesException {
 
         User filesOwner = userRepository.findUserById(userId);
 
@@ -91,7 +90,7 @@ public class FileService {
         return userFilesList;
     }
 
-    public FileInfoRecord downloadFileById(Integer userId, Integer fileID) throws IOException, WrongTokenException, FileDoesNotExistException {
+    public FileInfoRecord downloadFileById(Integer userId, Integer fileID) throws IOException, FileDoesNotExistException {
 
 
         ///// doing this way allows us to prevent any unwanted access to any user's files since this token is generated and given everytime the user login to their account.
@@ -110,7 +109,7 @@ public class FileService {
 
     }
 
-    public FileInfoRecord downloadFileByName(Integer userId, String fileName) throws IOException, FileDoesNotExistException, WrongTokenException {
+    public FileInfoRecord downloadFileByName(Integer userId, String fileName) throws IOException, FileDoesNotExistException {
 
 
         User user = userRepository.findUserById(userId);
@@ -128,7 +127,7 @@ public class FileService {
 
     }
 
-    public List<MyFile> getMyFilesBiggerThan(Integer userId, Integer size) throws WrongTokenException, YouHaveNoFilesException {
+    public List<MyFile> getMyFilesBiggerThan(Integer userId, Integer size) throws YouHaveNoFilesException {
 
         ///// doing this way allows us to prevent any unwanted access to any user's files since this token is generated and given everytime the user login to their account.
         User filesOwner = userRepository.findUserById(userId);
@@ -140,7 +139,7 @@ public class FileService {
         return userFilesList;
     }
 
-    public List<MyFile> getMyFilesLessThan(Integer userId, Integer size) throws WrongTokenException, YouHaveNoFilesException {
+    public List<MyFile> getMyFilesLessThan(Integer userId, Integer size) throws YouHaveNoFilesException {
 
         ///// doing this way allows us to prevent any unwanted access to any user's files since this token is generated and given everytime the user login to their account.
         User filesOwner = userRepository.findUserById(userId);

@@ -1,12 +1,9 @@
 package com.example.system.Services;
 
 
-import com.example.system.ApiUtils.ApiException;
-import com.example.system.ApiUtils.UserExceptions.LoginFailedException;
 import com.example.system.ApiUtils.UserExceptions.NoUsersException;
 import com.example.system.ApiUtils.UserExceptions.UserNotFoundException;
 import com.example.system.ApiUtils.UserExceptions.UsernameAlreadyUsedException;
-import com.example.system.ApiUtils.WrongTokenException;
 import com.example.system.Models.User;
 import com.example.system.Repository.AuthRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,10 +11,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -80,7 +74,7 @@ public class UserService {
     }
 
 
-    public User userInfo(Integer userId) throws LoginFailedException {
+    public User userInfo(Integer userId) {
 
         return authRepository.findUserById(userId);
     }
